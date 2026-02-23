@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+
+# Environment and secrets (never commit)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Database and runtime data
+backend/data/
+*.db
+*.db-journal
+*.db-wal
+
+# Uploads and generated files
+backend/uploads/
+uploads/
+
+# Build and tooling
+dist/
+build/
+*.tsbuildinfo
+.next/
+.npm
+.eslintcache
+
+# OS and editor
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*~
+
+# Optional: keep .env.example so others know which vars to set
+!.env.example
