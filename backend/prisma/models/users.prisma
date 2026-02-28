@@ -1,0 +1,22 @@
+enum Role {
+  volunteer
+  admin
+  super_admin
+}
+
+model users {
+  id                 String       @id @default(uuid())
+  email              String       @unique
+  password_hash      String
+  full_name          String
+  avatar_url         String?
+  role               Role         @default(volunteer)
+  preferences        String?      // JSON string representation
+  raw_user_meta_data String?      // JSON string representation
+  created_at         DateTime?    @default(now())
+  updated_at         DateTime?    @default(now()) @updatedAt
+  
+  profile            profiles?
+  volunteers         volunteers[]
+  user_roles         user_roles[]
+}

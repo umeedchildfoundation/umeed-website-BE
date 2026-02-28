@@ -1,0 +1,324 @@
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model app_settings {
+  id         String    @id @default(uuid())
+  key        String    @unique
+  value      String?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now()) @updatedAt
+}
+
+model contact_messages {
+  id         String    @id @default(uuid())
+  name       String
+  email      String
+  message    String
+  is_read    Int?      @default(0)
+  created_at DateTime? @default(now())
+}
+
+model event_media {
+  id         String    @id @default(uuid())
+  event_id   String
+  url        String
+  media_type MediaType @default(image)
+  caption    String?
+  created_at DateTime? @default(now())
+
+  event      events    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+}
+
+enum MediaType {
+  image
+  video
+}
+
+model events {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  date        String
+  event_date  String?
+  location    String?
+  tags        String?
+  created_at  DateTime? @default(now())
+  updated_at  DateTime? @default(now()) @updatedAt
+
+  event_media event_media[]
+  media       media[]
+}
+
+model media {
+  id          String    @id @default(uuid())
+  event_id    String?
+  url         String
+  type        MediaType @default(image)
+  caption     String?
+  filename    String?
+  mimetype    String?
+  size        Int?
+  uploaded_by String?
+  created_at  DateTime? @default(now())
+
+  event       events?   @relation(fields: [event_id], references: [id], onDelete: SetNull)
+}
+
+enum Visibility {
+  public
+  internal
+}
+
+model notices {
+  id             String    @id @default(uuid())
+  title          String
+  description    String?
+  date           String?
+  published_date String?
+  attachment_url String?
+  visibility     Visibility @default(public)
+  created_by     String?
+  created_at     DateTime?  @default(now())
+  updated_at     DateTime?  @default(now()) @updatedAt
+}
+
+model profiles {
+  id         String    @id @default(uuid())
+  user_id    String?   @unique
+  email      String
+  full_name  String
+  avatar_url String?
+  role       Role      @default(volunteer)
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now()) @updatedAt
+
+  user       users?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model session_assignments {
+  id           String    @id @default(uuid())
+  session_id   String
+  volunteer_id String
+  student_id   String
+  created_at   DateTime? @default(now())
+
+  session      sessions   @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  volunteer    volunteers @relation(fields: [volunteer_id], references: [id], onDelete: Cascade)
+  student      students   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+}
+
+enum RsvpResponse {
+  yes
+  no
+  maybe
+}
+
+model session_rsvps {
+  id           String    @id @default(uuid())
+  session_id   String
+  volunteer_id String
+  response     RsvpResponse?
+  created_at   DateTime? @default(now())
+
+  session      sessions   @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  volunteer    volunteers @relation(fields: [volunteer_id], references: [id], onDelete: Cascade)
+}
+
+model sessions {
+  id           String    @id @default(uuid())
+  title        String?
+  date         String
+  session_date String?
+  start_time   String?
+  end_time     String?
+  location     String?
+  notes        String?
+  status       String?
+  rsvp_enabled Int?      @default(0)
+  created_by   String?
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now()) @updatedAt
+
+  assignments          session_assignments[]
+  student_attendance   student_attendance[]
+  volunteer_attendance volunteer_attendance[]
+  session_rsvps        session_rsvps[]
+}
+
+enum ContentType {
+  text
+  image
+  number
+  json
+}
+
+model site_content {
+  id         String    @id @default(uuid())
+  section    String
+  key        String
+  value      String?
+  type       ContentType @default(text)
+  updated_at DateTime? @default(now())
+
+  @@unique([section, key])
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  late
+  excused
+}
+
+model student_attendance {
+  id           String    @id @default(uuid())
+  session_id   String
+  student_id   String
+  status       AttendanceStatus @default(absent)
+  remark       String?
+  marked_at    DateTime? @default(now())
+  marked_by    String?
+
+  session      sessions  @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  student      students  @relation(fields: [student_id], references: [id], onDelete: Cascade)
+}
+
+enum StudentStatus {
+  active
+  inactive
+}
+
+model students {
+  id                    String    @id @default(uuid())
+  name                  String?
+  full_name             String
+  gender                String?
+  date_of_birth         String?
+  school_name           String?
+  class_grade           String?
+  parent_name           String?
+  parent_guardian_name  String?
+  parent_contact        String?
+  parent_contact_number String?
+  address               String?
+  area                  String?
+  area_locality         String?
+  status                StudentStatus @default(active)
+  notes                 String?
+  enrollment_date       String?
+  image_url             String?
+  roll_number           String?
+  location_code         String?
+  documents             String?   // JSON string representation
+  created_at            DateTime? @default(now())
+  updated_at            DateTime? @default(now()) @updatedAt
+
+  session_assignments   session_assignments[]
+  student_attendance    student_attendance[]
+}
+
+model user_roles {
+  id         String    @id @default(uuid())
+  user_id    String
+  role       Role      @default(volunteer)
+  created_at DateTime? @default(now())
+
+  user       users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  volunteer
+  admin
+  super_admin
+}
+
+model users {
+  id                 String       @id @default(uuid())
+  email              String       @unique
+  password_hash      String
+  full_name          String
+  avatar_url         String?
+  role               Role         @default(volunteer)
+  preferences        String?      // JSON string representation
+  raw_user_meta_data String?      // JSON string representation
+  created_at         DateTime?    @default(now())
+  updated_at         DateTime?    @default(now()) @updatedAt
+  
+  profile            profiles?
+  volunteers         volunteers[]
+  user_roles         user_roles[]
+}
+
+model volunteer_applications {
+  id                  String    @id @default(uuid())
+  full_name           String
+  email               String
+  phone               String?
+  age                 Int?
+  gender              String?
+  address             String?
+  occupation          String?
+  availability        String?
+  motivation          String?
+  skills_subjects     String?
+  preferred_languages String?
+  status              VolunteerStatus @default(pending)
+  reviewed_by         String?
+  reviewed_at         String?
+  created_at          DateTime? @default(now())
+  updated_at          DateTime? @default(now()) @updatedAt
+}
+
+model volunteer_attendance {
+  id           String    @id @default(uuid())
+  session_id   String
+  volunteer_id String
+  status       AttendanceStatus @default(absent)
+  remark       String?
+  marked_at    DateTime? @default(now())
+  marked_by    String?
+
+  session      sessions   @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  volunteer    volunteers @relation(fields: [volunteer_id], references: [id], onDelete: Cascade)
+}
+
+enum VolunteerStatus {
+  pending
+  approved
+  rejected
+  inactive
+}
+
+model volunteers {
+  id                  String    @id @default(uuid())
+  user_id             String?
+  volunteer_id        String?
+  name                String
+  email               String
+  phone               String?
+  age                 Int?
+  gender              String?
+  address             String?
+  occupation          String?
+  skills              String?
+  preferred_languages String?
+  availability        String?
+  status              VolunteerStatus @default(pending)
+  joined_at           String?
+  profile_picture     String?
+  documents           String?   // JSON string representation
+  created_at          DateTime? @default(now())
+  updated_at          DateTime? @default(now()) @updatedAt
+
+  user                  users?                 @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  session_assignments   session_assignments[]
+  volunteer_attendance  volunteer_attendance[]
+  session_rsvps         session_rsvps[]
+}

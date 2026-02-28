@@ -1,0 +1,8 @@
+model user_roles {
+  id         String    @id @default(uuid())
+  user_id    String
+  role       Role      @default(volunteer)
+  created_at DateTime? @default(now())
+
+  user       users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}

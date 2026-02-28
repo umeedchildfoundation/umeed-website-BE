@@ -7,24 +7,27 @@
 import express from 'express';
 import cors from 'cors';
 import { join, dirname } from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
+import morgan, { StreamOptions } from 'morgan';
+import chalk from 'chalk';
 import { swaggerSpec } from './config/swagger.config.js';
 
 // Routes
-import authRoutes from './routes/auth.routes.js';
-import usersRoutes from './routes/users.routes.js';
-import volunteersRoutes from './routes/volunteers.routes.js';
-import studentsRoutes from './routes/students.routes.js';
-import sessionsRoutes from './routes/sessions.routes.js';
-import attendanceRoutes from './routes/attendance.routes.js';
-import noticesRoutes from './routes/notices.routes.js';
-import eventsRoutes from './routes/events.routes.js';
-import mediaRoutes from './routes/media.routes.js';
-import applicationsRoutes from './routes/applications.routes.js';
-import contactRoutes from './routes/contact.routes.js';
-import settingsRoutes from './routes/settings.routes.js';
-import contentRoutes from './routes/content.routes.js';
+import authRoutes from './features/auth/auth.routes.js';
+import usersRoutes from './features/users/users.routes.js';
+import volunteersRoutes from './features/volunteers/volunteers.routes.js';
+import studentsRoutes from './features/students/students.routes.js';
+import sessionsRoutes from './features/sessions/sessions.routes.js';
+import attendanceRoutes from './features/attendance/attendance.routes.js';
+import noticesRoutes from './features/notices/notices.routes.js';
+import eventsRoutes from './features/events/events.routes.js';
+import mediaRoutes from './features/media/media.routes.js';
+import applicationsRoutes from './features/applications/applications.routes.js';
+import contactRoutes from './features/contact/contact.routes.js';
+import settingsRoutes from './features/settings/settings.routes.js';
+import contentRoutes from './features/content/content.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -45,17 +48,48 @@ app.use(express.json());
 // Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files
-const uploadDir = process.env.UPLOAD_DIR || './uploads';
-app.use('/uploads', express.static(uploadDir));
 
-// Request logging in development
-if (process.env.NODE_ENV !== 'production') {
-    app.use((req, _res, next) => {
-        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-        next();
-    });
+// Logging setup
+const logDir = join(__dirname, '..', 'logs');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
 }
+
+const logFilePath = join(logDir, 'dev.log');
+console.log(chalk.yellow(`✅ Log file path: ${logFilePath} ✅`));
+
+const logStream = fs.createWriteStream(logFilePath, {
+  flags: 'a',
+});
+
+const stream: StreamOptions = {
+  write: (message) => logStream.write(message),
+};
+
+const customMorganFormat = morgan((tokens, req, res) => {
+  const status = Number(tokens.status(req, res));
+  const statusColor =
+    status >= 500
+      ? chalk.red(status)
+      : status >= 400
+        ? chalk.yellow(status)
+        : status >= 300
+          ? chalk.cyan(status)
+          : chalk.green(status);
+
+  return [
+    chalk.magenta.bold(tokens.method(req, res)),
+    statusColor,
+    chalk.blue(tokens.url(req, res)),
+    chalk.white(`${tokens["response-time"](req, res)} ms`),
+    chalk.gray(`- ${tokens["user-agent"](req, res)}`),
+  ].join(" ");
+});
+
+if (process.env.NODE_ENV !== 'production') {
+    app.use(customMorganFormat);
+}
+app.use(morgan("combined", { stream }));
 
 // ==================== ROUTES ====================
 
@@ -97,7 +131,7 @@ app.use((_req, res) => {
 
 // Global error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error('[Error]', err);
+    console.error(chalk.red('[Error]'),  err);
 
     // Multer errors
     if (err.code === 'LIMIT_FILE_SIZE') {

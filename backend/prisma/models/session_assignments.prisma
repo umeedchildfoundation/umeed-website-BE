@@ -1,0 +1,11 @@
+model session_assignments {
+  id           String    @id @default(uuid())
+  session_id   String
+  volunteer_id String
+  student_id   String
+  created_at   DateTime? @default(now())
+
+  session      sessions   @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  volunteer    volunteers @relation(fields: [volunteer_id], references: [id], onDelete: Cascade)
+  student      students   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+}

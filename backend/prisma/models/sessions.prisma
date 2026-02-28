@@ -1,0 +1,20 @@
+model sessions {
+  id           String    @id @default(uuid())
+  title        String?
+  date         String
+  session_date String?
+  start_time   String?
+  end_time     String?
+  location     String?
+  notes        String?
+  status       String?
+  rsvp_enabled Int?      @default(0)
+  created_by   String?
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now()) @updatedAt
+
+  assignments          session_assignments[]
+  student_attendance   student_attendance[]
+  volunteer_attendance volunteer_attendance[]
+  session_rsvps        session_rsvps[]
+}

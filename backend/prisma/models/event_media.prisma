@@ -1,0 +1,10 @@
+model event_media {
+  id         String    @id @default(uuid())
+  event_id   String
+  url        String
+  media_type MediaType @default(image)
+  caption    String?
+  created_at DateTime? @default(now())
+
+  event      events    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+}

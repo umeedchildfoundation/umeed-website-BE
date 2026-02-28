@@ -1,0 +1,17 @@
+enum Visibility {
+  public
+  internal
+}
+
+model notices {
+  id             String    @id @default(uuid())
+  title          String
+  description    String?
+  date           String?
+  published_date String?
+  attachment_url String?
+  visibility     Visibility @default(public)
+  created_by     String?
+  created_at     DateTime?  @default(now())
+  updated_at     DateTime?  @default(now()) @updatedAt
+}

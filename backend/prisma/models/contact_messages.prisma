@@ -1,0 +1,8 @@
+model contact_messages {
+  id         String    @id @default(uuid())
+  name       String
+  email      String
+  message    String
+  is_read    Int?      @default(0)
+  created_at DateTime? @default(now())
+}

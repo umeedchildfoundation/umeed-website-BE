@@ -1,0 +1,57 @@
+import Joi from 'joi';
+
+export const studentValidators = {
+    create: Joi.object({
+        name: Joi.string().optional(),
+        fullName: Joi.string().optional(),
+        full_name: Joi.string().optional(),
+        gender: Joi.string().valid('male', 'female', 'other').optional(),
+        dateOfBirth: Joi.string().isoDate().optional(),
+        date_of_birth: Joi.string().isoDate().optional(),
+        schoolName: Joi.string().optional(),
+        school_name: Joi.string().optional(),
+        classGrade: Joi.string().optional(),
+        class_grade: Joi.string().optional(),
+        parentName: Joi.string().optional(),
+        parent_name: Joi.string().optional(),
+        parentGuardianName: Joi.string().optional(),
+        parent_guardian_name: Joi.string().optional(),
+        parentContact: Joi.string().optional(),
+        parent_contact: Joi.string().optional(),
+        parentContactNumber: Joi.string().optional(),
+        parent_contact_number: Joi.string().optional(),
+        address: Joi.string().optional(),
+        area: Joi.string().optional(),
+        areaLocality: Joi.string().optional(),
+        area_locality: Joi.string().optional(),
+        status: Joi.string().valid('active', 'inactive').optional(),
+        notes: Joi.string().optional(),
+        imageUrl: Joi.string().uri().optional(),
+        image_url: Joi.string().uri().optional(),
+        rollNumber: Joi.string().optional(),
+        roll_number: Joi.string().optional(),
+        locationCode: Joi.string().optional(),
+        location_code: Joi.string().optional()
+    }).or('name', 'fullName', 'full_name'),
+
+    update: Joi.object({
+        name: Joi.string().optional(),
+        fullName: Joi.string().optional(),
+        gender: Joi.string().valid('male', 'female', 'other').optional(),
+        dateOfBirth: Joi.string().isoDate().optional(),
+        schoolName: Joi.string().optional(),
+        classGrade: Joi.string().optional(),
+        parentName: Joi.string().optional(),
+        parentGuardianName: Joi.string().optional(),
+        parentContact: Joi.string().optional(),
+        parentContactNumber: Joi.string().optional(),
+        address: Joi.string().optional(),
+        area: Joi.string().optional(),
+        areaLocality: Joi.string().optional(),
+        status: Joi.string().valid('active', 'inactive').optional(),
+        notes: Joi.string().optional(),
+        imageUrl: Joi.string().uri().optional(),
+        rollNumber: Joi.string().optional(),
+        locationCode: Joi.string().optional()
+    })
+};

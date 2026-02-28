@@ -1,13 +1,8 @@
-/**
- * JWT Utilities
- * 
- * Token generation and verification
- */
-
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'umeed-default-secret-change-me';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+// Cast strictly to SignOptions 'expiresIn' accepted types
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as SignOptions['expiresIn'];
 
 export interface JwtPayload {
     userId: string;

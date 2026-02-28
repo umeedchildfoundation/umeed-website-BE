@@ -1,0 +1,19 @@
+enum AttendanceStatus {
+  present
+  absent
+  late
+  excused
+}
+
+model student_attendance {
+  id           String    @id @default(uuid())
+  session_id   String
+  student_id   String
+  status       AttendanceStatus @default(absent)
+  remark       String?
+  marked_at    DateTime? @default(now())
+  marked_by    String?
+
+  session      sessions  @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  student      students  @relation(fields: [student_id], references: [id], onDelete: Cascade)
+}

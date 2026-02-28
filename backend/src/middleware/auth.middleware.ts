@@ -1,12 +1,6 @@
-/**
- * Authentication Middleware
- * 
- * Verifies JWT tokens on protected routes
- */
-
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractToken, JwtPayload } from '../utils/jwt.js';
-import { queryOne } from '../db/index.js';
+import prisma from '../db/index.js';
 
 // Extend Express Request type
 declare global {
@@ -25,7 +19,7 @@ declare global {
 /**
  * Middleware that requires a valid JWT token
  */
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
     const token = extractToken(req.headers.authorization);
 
     if (!token) {
@@ -41,10 +35,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     }
 
     // Fetch user from database to ensure they still exist
-    const user = queryOne<{ id: string; email: string; role: string; full_name: string }>(
-        'SELECT id, email, role, full_name FROM users WHERE id = ?',
-        [payload.userId]
-    );
+    const user = await prisma.users.findUnique({
+        where: { id: payload.userId },
+        select: { id: true, email: true, role: true, full_name: true }
+    });
 
     if (!user) {
         res.status(401).json({ error: 'User not found' });
@@ -65,16 +59,17 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 /**
  * Optional auth - attaches user if token present, but doesn't require it
  */
-export function optionalAuth(req: Request, res: Response, next: NextFunction): void {
+export async function optionalAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
     const token = extractToken(req.headers.authorization);
 
     if (token) {
         const payload = verifyToken(token);
         if (payload) {
-            const user = queryOne<{ id: string; email: string; role: string; full_name: string }>(
-                'SELECT id, email, role, full_name FROM users WHERE id = ?',
-                [payload.userId]
-            );
+            const user = await prisma.users.findUnique({
+                where: { id: payload.userId },
+                select: { id: true, email: true, role: true, full_name: true }
+            });
+            
             if (user) {
                 req.user = {
                     id: user.id,

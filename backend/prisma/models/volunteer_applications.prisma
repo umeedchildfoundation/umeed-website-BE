@@ -1,0 +1,19 @@
+model volunteer_applications {
+  id                  String    @id @default(uuid())
+  full_name           String
+  email               String
+  phone               String?
+  age                 Int?
+  gender              String?
+  address             String?
+  occupation          String?
+  availability        String?
+  motivation          String?
+  skills_subjects     String?
+  preferred_languages String?
+  status              VolunteerStatus @default(pending)
+  reviewed_by         String?
+  reviewed_at         String?
+  created_at          DateTime? @default(now())
+  updated_at          DateTime? @default(now()) @updatedAt
+}

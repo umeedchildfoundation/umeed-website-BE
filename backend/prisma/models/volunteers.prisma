@@ -1,0 +1,33 @@
+enum VolunteerStatus {
+  pending
+  approved
+  rejected
+  inactive
+}
+
+model volunteers {
+  id                  String    @id @default(uuid())
+  user_id             String?
+  volunteer_id        String?
+  name                String
+  email               String
+  phone               String?
+  age                 Int?
+  gender              String?
+  address             String?
+  occupation          String?
+  skills              String?
+  preferred_languages String?
+  availability        String?
+  status              VolunteerStatus @default(pending)
+  joined_at           String?
+  profile_picture     String?
+  documents           String?   // JSON string representation
+  created_at          DateTime? @default(now())
+  updated_at          DateTime? @default(now()) @updatedAt
+
+  user                  users?                 @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  session_assignments   session_assignments[]
+  volunteer_attendance  volunteer_attendance[]
+  session_rsvps         session_rsvps[]
+}

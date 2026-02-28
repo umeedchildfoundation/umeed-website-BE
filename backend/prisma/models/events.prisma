@@ -1,0 +1,19 @@
+enum MediaType {
+  image
+  video
+}
+
+model events {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  date        String
+  event_date  String?
+  location    String?
+  tags        String?
+  created_at  DateTime? @default(now())
+  updated_at  DateTime? @default(now()) @updatedAt
+
+  event_media event_media[]
+  media       media[]
+}

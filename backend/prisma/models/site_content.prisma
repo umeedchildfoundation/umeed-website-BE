@@ -1,0 +1,17 @@
+enum ContentType {
+  text
+  image
+  number
+  json
+}
+
+model site_content {
+  id         String    @id @default(uuid())
+  section    String
+  key        String
+  value      String?
+  type       ContentType @default(text)
+  updated_at DateTime? @default(now())
+
+  @@unique([section, key])
+}
