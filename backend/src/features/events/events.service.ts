@@ -2,11 +2,30 @@ import prismaInstance from '../../db/index.js';
 const prisma = prismaInstance!;
 import { v4 as uuidv4 } from 'uuid';
 
+function parseTags(val: any): string[] {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string' && val.trim() !== '') {
+        try {
+            const parsed = JSON.parse(val);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+    return [];
+}
+
+function formatEvent(e: any) {
+    if (!e) return e;
+    return { ...e, tags: parseTags(e.tags) };
+}
+
 export class EventsService {
     static async getAllEvents() {
-        return await prisma.events.findMany({
+        const rows = await prisma.events.findMany({
             orderBy: { date: 'desc' }
         });
+        return rows.map(formatEvent);
     }
 
     static async getEventById(id: string) {
@@ -21,7 +40,7 @@ export class EventsService {
 
         // Remap 'event_media' to 'media' for backwards compatibility
         const { event_media, ...eventData } = event as any;
-        return { ...eventData, media: event_media };
+        return { ...formatEvent(eventData), media: event_media };
     }
 
     static async createEvent(dataParams: any) {
@@ -29,26 +48,31 @@ export class EventsService {
             title,
             description,
             date,
+            event_date,
             eventDate,
             location,
             tags
         } = dataParams;
 
-        if (!title || !date) {
+        const resolvedEventDate = event_date ?? eventDate;
+        const resolvedDate = date ?? resolvedEventDate;
+
+        if (!title || !resolvedDate) {
             throw new Error('Title and date are required');
         }
 
-        return await prisma.events.create({
+        const created = await prisma.events.create({
             data: {
                 id: uuidv4(),
                 title,
                 description: description || null,
-                date,
-                event_date: eventDate || date,
+                date: resolvedDate,
+                event_date: resolvedEventDate || resolvedDate,
                 location: location || null,
                 tags: tags ? JSON.stringify(tags) : null
             }
         });
+        return formatEvent(created);
     }
 
     static async updateEvent(id: string, dataParams: any) {
@@ -64,6 +88,7 @@ export class EventsService {
             title: 'title',
             description: 'description',
             date: 'date',
+            event_date: 'event_date',
             eventDate: 'event_date',
             location: 'location'
         };
@@ -77,17 +102,18 @@ export class EventsService {
         }
 
         if (dataParams.tags !== undefined) {
-            data.tags = JSON.stringify(dataParams.tags);
+            data.tags = dataParams.tags ? JSON.stringify(dataParams.tags) : null;
         }
 
         if (Object.keys(data).length > 0) {
             data.updated_at = new Date().toISOString();
         }
 
-        return await prisma.events.update({
+        const updated = await prisma.events.update({
             where: { id },
             data
         });
+        return formatEvent(updated);
     }
 
     static async deleteEvent(id: string) {

@@ -1,7 +1,7 @@
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -25,17 +25,6 @@ model contact_messages {
   created_at DateTime? @default(now())
 }
 
-model event_media {
-  id         String    @id @default(uuid())
-  event_id   String
-  url        String
-  media_type MediaType @default(image)
-  caption    String?
-  created_at DateTime? @default(now())
-
-  event      events    @relation(fields: [event_id], references: [id], onDelete: Cascade)
-}
-
 enum MediaType {
   image
   video
@@ -54,6 +43,17 @@ model events {
 
   event_media event_media[]
   media       media[]
+}
+
+model event_media {
+  id         String    @id @default(uuid())
+  event_id   String
+  url        String
+  media_type MediaType @default(image)
+  caption    String?
+  created_at DateTime? @default(now())
+
+  event      events    @relation(fields: [event_id], references: [id], onDelete: Cascade)
 }
 
 model media {
@@ -102,6 +102,27 @@ model profiles {
   user       users?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
+model sessions {
+  id           String    @id @default(uuid())
+  title        String?
+  date         String
+  session_date String?
+  start_time   String?
+  end_time     String?
+  location     String?
+  notes        String?
+  status       String?
+  rsvp_enabled Int?      @default(0)
+  created_by   String?
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now()) @updatedAt
+
+  assignments          session_assignments[]
+  student_attendance   student_attendance[]
+  volunteer_attendance volunteer_attendance[]
+  session_rsvps        session_rsvps[]
+}
+
 model session_assignments {
   id           String    @id @default(uuid())
   session_id   String
@@ -131,27 +152,6 @@ model session_rsvps {
   volunteer    volunteers @relation(fields: [volunteer_id], references: [id], onDelete: Cascade)
 }
 
-model sessions {
-  id           String    @id @default(uuid())
-  title        String?
-  date         String
-  session_date String?
-  start_time   String?
-  end_time     String?
-  location     String?
-  notes        String?
-  status       String?
-  rsvp_enabled Int?      @default(0)
-  created_by   String?
-  created_at   DateTime? @default(now())
-  updated_at   DateTime? @default(now()) @updatedAt
-
-  assignments          session_assignments[]
-  student_attendance   student_attendance[]
-  volunteer_attendance volunteer_attendance[]
-  session_rsvps        session_rsvps[]
-}
-
 enum ContentType {
   text
   image
@@ -168,26 +168,6 @@ model site_content {
   updated_at DateTime? @default(now())
 
   @@unique([section, key])
-}
-
-enum AttendanceStatus {
-  present
-  absent
-  late
-  excused
-}
-
-model student_attendance {
-  id           String    @id @default(uuid())
-  session_id   String
-  student_id   String
-  status       AttendanceStatus @default(absent)
-  remark       String?
-  marked_at    DateTime? @default(now())
-  marked_by    String?
-
-  session      sessions  @relation(fields: [session_id], references: [id], onDelete: Cascade)
-  student      students  @relation(fields: [student_id], references: [id], onDelete: Cascade)
 }
 
 enum StudentStatus {
@@ -224,13 +204,24 @@ model students {
   student_attendance    student_attendance[]
 }
 
-model user_roles {
-  id         String    @id @default(uuid())
-  user_id    String
-  role       Role      @default(volunteer)
-  created_at DateTime? @default(now())
+enum AttendanceStatus {
+  present
+  absent
+  late
+  excused
+}
 
-  user       users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model student_attendance {
+  id           String    @id @default(uuid())
+  session_id   String
+  student_id   String
+  status       AttendanceStatus @default(absent)
+  remark       String?
+  marked_at    DateTime? @default(now())
+  marked_by    String?
+
+  session      sessions  @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  student      students  @relation(fields: [student_id], references: [id], onDelete: Cascade)
 }
 
 enum Role {
@@ -256,37 +247,13 @@ model users {
   user_roles         user_roles[]
 }
 
-model volunteer_applications {
-  id                  String    @id @default(uuid())
-  full_name           String
-  email               String
-  phone               String?
-  age                 Int?
-  gender              String?
-  address             String?
-  occupation          String?
-  availability        String?
-  motivation          String?
-  skills_subjects     String?
-  preferred_languages String?
-  status              VolunteerStatus @default(pending)
-  reviewed_by         String?
-  reviewed_at         String?
-  created_at          DateTime? @default(now())
-  updated_at          DateTime? @default(now()) @updatedAt
-}
+model user_roles {
+  id         String    @id @default(uuid())
+  user_id    String
+  role       Role      @default(volunteer)
+  created_at DateTime? @default(now())
 
-model volunteer_attendance {
-  id           String    @id @default(uuid())
-  session_id   String
-  volunteer_id String
-  status       AttendanceStatus @default(absent)
-  remark       String?
-  marked_at    DateTime? @default(now())
-  marked_by    String?
-
-  session      sessions   @relation(fields: [session_id], references: [id], onDelete: Cascade)
-  volunteer    volunteers @relation(fields: [volunteer_id], references: [id], onDelete: Cascade)
+  user       users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 enum VolunteerStatus {
@@ -321,4 +288,37 @@ model volunteers {
   session_assignments   session_assignments[]
   volunteer_attendance  volunteer_attendance[]
   session_rsvps         session_rsvps[]
+}
+
+model volunteer_applications {
+  id                  String    @id @default(uuid())
+  full_name           String
+  email               String
+  phone               String?
+  age                 Int?
+  gender              String?
+  address             String?
+  occupation          String?
+  availability        String?
+  motivation          String?
+  skills_subjects     String?
+  preferred_languages String?
+  status              VolunteerStatus @default(pending)
+  reviewed_by         String?
+  reviewed_at         String?
+  created_at          DateTime? @default(now())
+  updated_at          DateTime? @default(now()) @updatedAt
+}
+
+model volunteer_attendance {
+  id           String    @id @default(uuid())
+  session_id   String
+  volunteer_id String
+  status       AttendanceStatus @default(absent)
+  remark       String?
+  marked_at    DateTime? @default(now())
+  marked_by    String?
+
+  session      sessions   @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  volunteer    volunteers @relation(fields: [volunteer_id], references: [id], onDelete: Cascade)
 }
