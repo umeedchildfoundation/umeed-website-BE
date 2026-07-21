@@ -20,6 +20,7 @@ import usersRoutes from './features/users/users.routes.js';
 import volunteersRoutes from './features/volunteers/volunteers.routes.js';
 import studentsRoutes from './features/students/students.routes.js';
 import sessionsRoutes from './features/sessions/sessions.routes.js';
+import sessionRsvpsRoutes from './features/session_rsvps/session_rsvps.routes.js';
 import attendanceRoutes from './features/attendance/attendance.routes.js';
 import noticesRoutes from './features/notices/notices.routes.js';
 import eventsRoutes from './features/events/events.routes.js';
@@ -110,6 +111,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/volunteers', volunteersRoutes);
 app.use('/api/students', studentsRoutes);
 app.use('/api/sessions', sessionsRoutes);
+app.use('/api/session_rsvps', sessionRsvpsRoutes);
 app.use('/api/attendance', attendanceRoutes);
 // Alias for frontend compatibility (dbService expects table names)
 app.use('/api/student_attendance', attendanceRoutes);

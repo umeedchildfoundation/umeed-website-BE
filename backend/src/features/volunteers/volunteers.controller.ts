@@ -2,11 +2,25 @@ import chalk from 'chalk';
 import { Request, Response } from 'express';
 import { VolunteersService } from './volunteers.service.js';
 
+const REQUIRED_FIELD_ERRORS = new Set([
+    'Name and email are required',
+    'Phone is required',
+    'Age is required',
+    'Gender is required',
+    'Address is required',
+    'Occupation is required',
+    'At least one skill/subject is required',
+    'At least one preferred language is required',
+    'Availability is required'
+]);
+
 export class VolunteersController {
     static async getAllVolunteers(req: Request, res: Response) {
         try {
             const volunteers = await VolunteersService.getAllVolunteers({
-                status: req.query.status as string
+                status: req.query.status as string,
+                user_id: req.query.user_id as string,
+                email: req.query.email as string
             });
             res.json(volunteers);
         } catch (error) {
@@ -32,7 +46,7 @@ export class VolunteersController {
             res.status(201).json(volunteer);
         } catch (error: any) {
             console.error(chalk.red('[Volunteers] Create error:'),  error);
-            if (error.message === 'Name and email are required') return res.status(400).json({ error: error.message });
+            if (REQUIRED_FIELD_ERRORS.has(error.message)) return res.status(400).json({ error: error.message });
             res.status(500).json({ error: 'Failed to create volunteer' });
         }
     }
