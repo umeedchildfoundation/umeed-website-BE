@@ -5,36 +5,34 @@ import { AttendanceStatus } from '@prisma/client';
 
 export class AttendanceService {
     // ================= ALIAS HANDLERS =================
-    static async getStudentAttendanceAlias(sessionId?: string) {
-        if (sessionId) {
-            return await prisma.student_attendance.findMany({
-                where: { session_id: String(sessionId) },
-                include: { student: { select: { full_name: true, class_grade: true } } },
-                orderBy: { student: { full_name: 'asc' } }
-            });
-        } else {
-            return await prisma.student_attendance.findMany({
-                include: { student: { select: { full_name: true, class_grade: true } } },
-                orderBy: { marked_at: 'desc' },
-                take: 100
-            });
-        }
+    static async getStudentAttendanceAlias(filters: { sessionId?: string; studentId?: string } = {}) {
+        const where: any = {};
+        if (filters.sessionId) where.session_id = String(filters.sessionId);
+        if (filters.studentId) where.student_id = String(filters.studentId);
+
+        const hasFilter = Object.keys(where).length > 0;
+
+        return await prisma.student_attendance.findMany({
+            where,
+            include: { student: { select: { full_name: true, class_grade: true } } },
+            orderBy: hasFilter ? { student: { full_name: 'asc' } } : { marked_at: 'desc' },
+            ...(hasFilter ? {} : { take: 100 })
+        });
     }
 
-    static async getVolunteerAttendanceAlias(sessionId?: string) {
-        if (sessionId) {
-            return await prisma.volunteer_attendance.findMany({
-                where: { session_id: String(sessionId) },
-                include: { volunteer: { select: { name: true } } },
-                orderBy: { volunteer: { name: 'asc' } },
-            });
-        } else {
-            return await prisma.volunteer_attendance.findMany({
-                include: { volunteer: { select: { name: true } } },
-                orderBy: { marked_at: 'desc' },
-                take: 100
-            });
-        }
+    static async getVolunteerAttendanceAlias(filters: { sessionId?: string; volunteerId?: string } = {}) {
+        const where: any = {};
+        if (filters.sessionId) where.session_id = String(filters.sessionId);
+        if (filters.volunteerId) where.volunteer_id = String(filters.volunteerId);
+
+        const hasFilter = Object.keys(where).length > 0;
+
+        return await prisma.volunteer_attendance.findMany({
+            where,
+            include: { volunteer: { select: { name: true } } },
+            orderBy: hasFilter ? { volunteer: { name: 'asc' } } : { marked_at: 'desc' },
+            ...(hasFilter ? {} : { take: 100 })
+        });
     }
 
     // ================= STUDENT ATTENDANCE =================

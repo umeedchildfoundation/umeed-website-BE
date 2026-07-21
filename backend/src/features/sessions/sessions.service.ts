@@ -50,11 +50,18 @@ export class SessionsService {
 
     static async createSession(dataParams: any, userId: string) {
         const {
-            title, date, sessionDate, startTime, endTime,
-            location, notes, status, rsvpEnabled
+            title, date, session_date, sessionDate,
+            start_time, startTime, end_time, endTime,
+            location, notes, status, rsvp_enabled, rsvpEnabled
         } = dataParams;
 
-        if (!date) {
+        const resolvedSessionDate = session_date ?? sessionDate;
+        const resolvedDate = date ?? resolvedSessionDate;
+        const resolvedStartTime = start_time ?? startTime;
+        const resolvedEndTime = end_time ?? endTime;
+        const resolvedRsvpEnabled = rsvp_enabled ?? rsvpEnabled;
+
+        if (!resolvedDate) {
             throw new Error('Date is required');
         }
 
@@ -62,14 +69,14 @@ export class SessionsService {
             data: {
                 id: uuidv4(),
                 title: title || null,
-                date,
-                session_date: sessionDate || date,
-                start_time: startTime || null,
-                end_time: endTime || null,
+                date: resolvedDate,
+                session_date: resolvedSessionDate || resolvedDate,
+                start_time: resolvedStartTime || null,
+                end_time: resolvedEndTime || null,
                 location: location || null,
                 notes: notes || null,
                 status: status || 'scheduled',
-                rsvp_enabled: rsvpEnabled ? 1 : 0,
+                rsvp_enabled: resolvedRsvpEnabled ? 1 : 0,
                 created_by: userId
             }
         });
@@ -87,8 +94,11 @@ export class SessionsService {
         const fields: Record<string, string> = {
             title: 'title',
             date: 'date',
+            session_date: 'session_date',
             sessionDate: 'session_date',
+            start_time: 'start_time',
             startTime: 'start_time',
+            end_time: 'end_time',
             endTime: 'end_time',
             location: 'location',
             notes: 'notes',
@@ -103,8 +113,9 @@ export class SessionsService {
             }
         }
 
-        if (dataParams.rsvpEnabled !== undefined) {
-            data.rsvp_enabled = dataParams.rsvpEnabled ? 1 : 0;
+        const resolvedRsvpEnabled = dataParams.rsvp_enabled ?? dataParams.rsvpEnabled;
+        if (resolvedRsvpEnabled !== undefined) {
+            data.rsvp_enabled = resolvedRsvpEnabled ? 1 : 0;
         }
 
         if (Object.keys(data).length > 0) {

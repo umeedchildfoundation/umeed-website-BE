@@ -7,10 +7,16 @@ export class AttendanceController {
     static async getAlias(req: Request, res: Response) {
         try {
             if (req.baseUrl.endsWith('student_attendance')) {
-                const attendance = await AttendanceService.getStudentAttendanceAlias(req.query.session_id as string);
+                const attendance = await AttendanceService.getStudentAttendanceAlias({
+                    sessionId: req.query.session_id as string,
+                    studentId: req.query.student_id as string
+                });
                 res.json(attendance);
             } else if (req.baseUrl.endsWith('volunteer_attendance')) {
-                const attendance = await AttendanceService.getVolunteerAttendanceAlias(req.query.session_id as string);
+                const attendance = await AttendanceService.getVolunteerAttendanceAlias({
+                    sessionId: req.query.session_id as string,
+                    volunteerId: req.query.volunteer_id as string
+                });
                 res.json(attendance);
             } else {
                 res.status(404).json({ error: 'Not found' });

@@ -4,7 +4,7 @@ export const contentValidators = {
     upsert: Joi.object({
         section: Joi.string().required(),
         key: Joi.string().required(),
-        value: Joi.string().allow('').required(),
+        value: Joi.string().allow('', null).required(),
         type: Joi.string().valid('text', 'html', 'json', 'image').optional()
     }),
 
@@ -13,7 +13,7 @@ export const contentValidators = {
             Joi.object({
                 section: Joi.string().required(),
                 key: Joi.string().required(),
-                value: Joi.string().allow('').required(),
+                value: Joi.string().allow('', null).required(),
                 type: Joi.string().valid('text', 'html', 'json', 'image').optional()
             })
         ).required()
