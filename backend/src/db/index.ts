@@ -6,9 +6,9 @@ import ENV_CONFIG from '../EnvConfig.js';
 
 const pool = new Pool({
   connectionString: ENV_CONFIG.CONN_URL,
-  // ssl: {
-  //   rejectUnauthorized: false,
-  // },
+  ssl: {
+    rejectUnauthorized: false,
+  },
   max: 50,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 20000,
