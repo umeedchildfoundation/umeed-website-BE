@@ -5,18 +5,20 @@
     "main": "dist/server.js",
     "type": "module",
     "scripts": {
-        "dev": "tsx watch src/server.ts",
+        "dev": "nodemon",
         "build": "tsc",
         "start": "node dist/server.js",
-        "prisma:sync": "tsx sync-prisma.ts",
-        "prisma:migrate": "npm run prisma:sync && npx prisma migrate dev",
-        "prisma:generate": "npm run prisma:sync && npx prisma generate",
-        "seed": "tsx prisma/seed.ts"
+        "predev": "npm run prisma:generate",
+        "prisma:migrate": "npx prisma migrate dev",
+        "prisma:generate": "npx prisma generate",
+        "seed": "node --experimental-strip-types prisma/seed.ts",
+        "seed:reset": "SEED_RESET=true node --experimental-strip-types prisma/seed.ts",
+        "script:parshwa-application": "node --experimental-strip-types scripts/reset-parshwa-application.ts"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.1000.0",
-        "@prisma/adapter-pg": "^7.4.2",
-        "@prisma/client": "^6.16.0",
+        "@prisma/adapter-pg": "^7.9.1",
+        "@prisma/client": "^7.9.1",
         "bcryptjs": "^2.4.3",
         "chalk": "^5.6.2",
         "cors": "^2.8.5",
@@ -43,8 +45,16 @@
         "@types/swagger-jsdoc": "^6.0.4",
         "@types/swagger-ui-express": "^4.1.8",
         "@types/uuid": "^9.0.8",
-        "prisma": "^6.16.0",
+        "nodemon": "^3.1.14",
+        "prisma": "^7.9.1",
         "tsx": "^4.21.0",
         "typescript": "^5.3.3"
+    },
+    "allowScripts": {
+        "@prisma/engines@7.9.1": true,
+        "prisma@7.9.1": true,
+        "@scarf/scarf@1.4.0": true,
+        "esbuild@0.27.2": true,
+        "fsevents@2.3.3": true
     }
 }

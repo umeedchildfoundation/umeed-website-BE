@@ -37,7 +37,11 @@ export class ApplicationsController {
 
     static async updateApplicationStatus(req: Request, res: Response) {
         try {
-            const updated = await ApplicationsService.updateApplicationStatus(req.params.id, req.body.status);
+            const updated = await ApplicationsService.updateApplicationStatus(
+                req.params.id,
+                req.body.status,
+                req.user?.id
+            );
             res.json(updated);
         } catch (error: any) {
             console.error(chalk.red('[Applications] Update error:'),  error);

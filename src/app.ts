@@ -67,7 +67,10 @@ const stream: StreamOptions = {
   write: (message) => logStream.write(message),
 };
 
-const customMorganFormat = morgan((tokens, req, res) => {
+const skipNoisyRequests = (req: express.Request) =>
+  req.method === 'GET' && (req.url === '/' || req.url === '/favicon.ico');
+
+const customMorganMiddleware = morgan((tokens, req, res) => {
   const status = Number(tokens.status(req, res));
   const statusColor =
     status >= 500
@@ -85,14 +88,24 @@ const customMorganFormat = morgan((tokens, req, res) => {
     chalk.white(`${tokens["response-time"](req, res)} ms`),
     chalk.gray(`- ${tokens["user-agent"](req, res)}`),
   ].join(" ");
-});
+}, { skip: skipNoisyRequests });
 
 if (process.env.NODE_ENV !== 'production') {
-    app.use(customMorganFormat);
+    app.use(customMorganMiddleware);
 }
-app.use(morgan("combined", { stream }));
+app.use(morgan('combined', { stream, skip: skipNoisyRequests }));
 
 // ==================== ROUTES ====================
+
+// Root — avoids 404 spam when browser/Cursor preview hits localhost:PORT/
+app.get('/', (_req, res) => {
+    res.json({
+        name: 'UMEED Backend API',
+        docs: '/api-docs',
+        health: '/api/health',
+        message: 'This is the API server. Use /api-docs for endpoints or run the frontend separately.',
+    });
+});
 
 // Health check
 app.get('/api/health', (_req, res) => {

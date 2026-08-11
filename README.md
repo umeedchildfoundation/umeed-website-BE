@@ -1,211 +1,154 @@
 # UMEED Backend API
 
-REST API for **UMEED Children Foundation**. Node.js, Express, TypeScript, SQLite (sql.js). Handles auth, users, volunteers, students, sessions, attendance, notices, events, media, volunteer applications, contact messages, and site content.
-
-**Use this repo as the root of your backend GitHub repository.** Copy the entire contents of the `backend` folder into the repo (so that this README and `package.json` are at the repo root).
+REST API for **UMEED Children Foundation**. Node.js, Express, TypeScript, PostgreSQL (Prisma ORM). Handles auth, users, volunteers, students, sessions, attendance, notices, events, media, volunteer applications, contact messages, and site content.
 
 ---
 
 ## Quick Start
 
 ```bash
-# Clone your backend repo, then:
 npm install
 
-# Create .env (see Environment Variables below)
 cp .env.example .env
-# Edit .env: set JWT_SECRET, FRONTEND_URL if needed
+# Edit .env: set DATABASE_URL (Neon/local Postgres), JWT_SECRET, FRONTEND_URL
 
-# Seed demo users (optional but recommended for local dev)
-npm run seed
+npx prisma migrate deploy   # apply migrations
+npm run seed                # idempotent — replaces fixture data, safe to re-run
 
-# Start development server
 npm run dev
 ```
 
-Server runs at **http://localhost:3001**. Health check: `curl http://localhost:3001/api/health`
+Server runs at **http://localhost:3001**
+
+- Health: `curl http://localhost:3001/api/health`
+- API docs: http://localhost:3001/api-docs
+- Test scenarios: `tests/scenarios/README.md`
+
+**Approval emails** are sent by the **frontend via Google Apps Script**, not this API.
 
 ---
 
 ## Prerequisites
 
-- **Node.js** v16 or higher
-- **npm** (or yarn/pnpm)
-
----
-
-## Setup
-
-### 1. Install dependencies
-
-```bash
-npm install
-```
-
-### 2. Environment file
-
-Create a `.env` file in the **project root** (same folder as this README):
-
-```
-PORT=3001
-NODE_ENV=development
-FRONTEND_URL=http://localhost:8080
-JWT_SECRET=umeed-super-secret-jwt-key-change-in-production
-JWT_EXPIRES_IN=7d
-DB_PATH=./data/umeed.db
-UPLOAD_DIR=./uploads
-```
-
-Copy from `.env.example` if available and adjust.
-
-### 3. Seed demo data (optional)
-
-Creates demo users and sample data so you can log in from the frontend:
-
-```bash
-npm run seed
-```
-
-**Demo accounts after seeding:**
-
-| Role        | Email               | Password     |
-|------------|---------------------|--------------|
-| Super Admin | preet@umeed.org    | admin2026    |
-| Admin      | admin@umeed.org    | admin2026    |
-| Volunteer  | volunteer@umeed.org | volunteer2026 |
-
-### 4. Start server
-
-```bash
-npm run dev
-```
-
-- API: http://localhost:3001  
-- Swagger docs: http://localhost:3001/api-docs  
-
----
-
-## Project structure (repo root = backend)
-
-```
-├── src/
-│   ├── app.ts                 # Express app
-│   ├── server.ts              # Entry point
-│   ├── db/
-│   │   ├── index.ts           # DB connection (sql.js)
-│   │   └── schema.sql        # SQLite schema
-│   ├── routes/                # API routes (auth, users, volunteers, students, sessions, attendance, etc.)
-│   ├── middleware/           # Auth (JWT), role checks
-│   ├── utils/                 # Password, JWT, idGenerator
-│   └── config/                # Swagger
-├── sql/                       # Optional SQL migration/script files
-├── scripts/                   # Scripts (e.g. show-db.ts)
-├── data/                      # SQLite file (created at runtime) — umeed.db
-├── uploads/                   # Uploaded files
-├── tests/
-├── .env                       # Your env (do not commit)
-├── .env.example
-├── package.json
-├── tsconfig.json
-└── README.md                  # This file
-```
+- **Node.js** v20 or higher
+- **PostgreSQL** database (local or cloud, e.g. Neon)
+- **npm**
 
 ---
 
 ## Environment variables
 
-| Variable       | Description           | Default / Note                    |
-|----------------|-----------------------|-----------------------------------|
-| `PORT`         | Server port           | `3001`                            |
-| `NODE_ENV`     | development / production | `development`                 |
-| `FRONTEND_URL` | Allowed CORS origin   | `http://localhost:8080`           |
-| `JWT_SECRET`   | Secret for JWT        | **Required**; change in production |
-| `JWT_EXPIRES_IN` | Token expiry       | `7d`                              |
-| `DB_PATH`      | SQLite file path      | `./data/umeed.db`                 |
-| `UPLOAD_DIR`   | File upload directory | `./uploads`                       |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string (`?sslmode=require` for Neon) | Yes |
+| `PORT` | Server port | No (default `3001`) |
+| `NODE_ENV` | `development` / `production` | No |
+| `FRONTEND_URL` | CORS allowed origin | No (default `http://localhost:8080`) |
+| `JWT_SECRET` | JWT signing secret | Yes |
+| `JWT_EXPIRES_IN` | Token expiry | No (default `7d`) |
+| `AWS_REGION` | S3 region for media uploads | For uploads |
+| `AWS_ACCESS_KEY_ID` | S3 access key | For uploads |
+| `AWS_SECRET_ACCESS_KEY` | S3 secret key | For uploads |
+| `AWS_S3_BUCKET_NAME` | S3 bucket name | For uploads |
+
+Copy from `.env.example` and adjust.
 
 ---
 
 ## Database
 
-- **Engine:** SQLite via **sql.js** (file persisted to disk).
-- **File:** `data/umeed.db` (created on first run).
-- **Schema:** `src/db/schema.sql`.
-
-**Backup:**
-
-```bash
-cp data/umeed.db data/umeed.db.backup
-```
-
-**Restore:**
+- **Engine:** PostgreSQL via **Prisma ORM** with `@prisma/adapter-pg`
+- **Schema:** multi-file under `prisma/` (`schema.prisma` + `prisma/models/*.prisma`)
+- **Config:** `prisma.config.ts` (connection URL for CLI/migrations)
+- **Migrations:** `prisma/migrations/`
 
 ```bash
-cp data/umeed.db.backup data/umeed.db
+npx prisma migrate dev      # create/apply migrations (local dev)
+npx prisma migrate deploy   # apply migrations (production/CI)
+npm run seed                # seed demo users
 ```
 
-If the database or `data/` is missing:
+**Demo accounts after seeding:**
 
-```bash
-mkdir -p data
-npm run dev
-```
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | preet@umeed.org | admin2026 |
+| Admin | admin@umeed.org | admin2026 |
+| Volunteer | volunteer@umeed.org | volunteer2026 |
 
 ---
 
-## Main API areas
+## Project structure
 
-- **Auth:** `/api/auth` — login, register, me, change-password  
-- **Users:** `/api/users` (admin)  
-- **Volunteers:** `/api/volunteers`  
-- **Students:** `/api/students`  
-- **Sessions:** `/api/sessions`  
-- **Attendance:** `/api/attendance` (students & volunteers, assignments)  
-- **Notices:** `/api/notices`  
-- **Events:** `/api/events`  
-- **Media:** `/api/media/upload`  
-- **Applications:** `/api/volunteer_applications`  
-- **Contact:** `/api/contact_messages`  
-- **Settings:** `/api/app_settings`  
-- **Content:** `/api/content` (site CMS)  
-
-Full interactive docs: **http://localhost:3001/api-docs** (Swagger).
+```
+├── src/
+│   ├── app.ts              # Express app, middleware, routes
+│   ├── server.ts           # Entry point
+│   ├── db/                 # Prisma client + pg pool
+│   ├── shared/             # Shared utilities (pg pool config)
+│   ├── features/           # Route handlers by domain
+│   ├── middleware/         # Auth, validation, roles
+│   ├── utils/              # JWT, password, S3, etc.
+│   └── config/             # Swagger
+├── prisma/
+│   ├── schema.prisma       # datasource + generator
+│   ├── models/             # Prisma models (multi-file)
+│   ├── migrations/
+│   └── seed.ts
+├── prisma.config.ts        # Prisma CLI config (DATABASE_URL)
+├── nodemon.json            # Dev auto-reload
+├── uploads/                # Local file uploads
+├── logs/
+├── .env.example
+└── Dockerfile
+```
 
 ---
 
 ## Scripts
 
-| Command              | Description                |
-|----------------------|----------------------------|
-| `npm run dev`        | Start dev server (tsx watch) |
-| `npm run build`      | TypeScript build            |
-| `npm start`          | Run production build        |
-| `npm run seed`       | Seed demo users & data      |
-| `npm run test:endpoints` | Run API tests          |
-| `npx tsx scripts/show-db.ts` | Print DB contents (read-only) |
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server with nodemon (auto-runs `prisma generate`) |
+| `npm run build` | Compile TypeScript to `dist/` |
+| `npm start` | Run production build |
+| `npm run seed` | Seed demo users + test fixtures (idempotent) |
+| `npm run seed:reset` | Full seed reset (dev only) |
+| `npm run prisma:generate` | Generate Prisma client |
+| `npm run prisma:migrate` | Create/apply migrations (dev) |
 
 ---
 
 ## Production
 
-1. Set `NODE_ENV=production` and a strong `JWT_SECRET`.
-2. Set `FRONTEND_URL` to your frontend origin (e.g. `https://your-app.vercel.app`).
+1. Set `NODE_ENV=production`, strong `JWT_SECRET`, and real `DATABASE_URL`.
+2. Set `FRONTEND_URL` to your frontend origin.
 3. Build and run:
 
    ```bash
+   npx prisma migrate deploy
    npm run build
    npm start
    ```
 
-Deploy to Railway, Render, Heroku, DigitalOcean, AWS, etc., and configure env vars there.
+Docker:
+
+```bash
+docker build -t umeed-backend .
+docker run -p 3001:3001 --env-file .env umeed-backend
+```
+
+At **build** time, Docker uses a placeholder `DATABASE_URL` only for `prisma generate`. At **runtime**, pass the real `DATABASE_URL`.
 
 ---
 
 ## Troubleshooting
 
-- **Port in use:** Change `PORT` in `.env` or stop the process using 3001.
-- **CORS errors:** Ensure `FRONTEND_URL` in `.env` matches the frontend origin.
-- **No users / login fails:** Run `npm run seed` and restart the server so it reloads the DB.
+- **Port in use:** Change `PORT` in `.env` or stop the process on 3001.
+- **CORS errors:** Ensure `FRONTEND_URL` matches your frontend origin.
+- **DB connection fails:** Check `DATABASE_URL`, wake Neon DB if paused, use `?sslmode=require` for cloud Postgres.
+- **No users / login fails:** Run `npm run seed`.
+- **Prisma IDE errors:** Reload the window after schema changes; schema lives in `prisma/` folder.
 
 ---
 
