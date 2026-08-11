@@ -13,10 +13,10 @@ export const applicationValidators = {
         motivation: Joi.string().optional(),
         skills_subjects: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).optional(),
         preferred_languages: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).optional(),
-        status: Joi.string().valid('pending', 'reviewed', 'approved', 'rejected').optional()
+        status: Joi.string().valid('pending', 'approved', 'rejected', 'inactive').optional()
     }),
 
     updateStatus: Joi.object({
-        status: Joi.string().valid('pending', 'reviewed', 'approved', 'rejected').required()
+        status: Joi.string().valid('pending', 'approved', 'rejected', 'inactive').required()
     })
 };

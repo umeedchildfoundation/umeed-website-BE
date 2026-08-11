@@ -19,10 +19,19 @@ async function main() {
         console.log(chalk.green('[Server] Database ready'));
 
         // Start server
-        app.listen(PORT, () => {
+        const server = app.listen(PORT, () => {
             console.log(chalk.green(`[Server] ✅ Running at http://localhost:${PORT}`));
+            console.log(chalk.green(`[Server] API docs: http://localhost:${PORT}/api-docs`));
             console.log(chalk.green(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`));
             console.log(chalk.green('[Server] Press Ctrl+C to stop'));
+        });
+
+        server.on('error', (error: NodeJS.ErrnoException) => {
+            if (error.code === 'EADDRINUSE') {
+                console.error(chalk.red(`[Server] Port ${PORT} is already in use. Stop the other process or change PORT in .env`));
+                process.exit(1);
+            }
+            throw error;
         });
 
         // Graceful shutdown

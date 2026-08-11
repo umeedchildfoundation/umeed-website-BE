@@ -53,20 +53,24 @@ export class ApplicationsService {
         });
     }
 
-    static async updateApplicationStatus(id: string, status: string) {
+    static async updateApplicationStatus(id: string, status: string, reviewedBy?: string) {
         const existing = await prisma.volunteer_applications.findUnique({
             where: { id }
         });
 
         if (!existing) throw new Error('Application not found');
 
-        if (status) {
-            return await prisma.volunteer_applications.update({
-                where: { id },
-                data: { status: status as VolunteerStatus, updated_at: new Date().toISOString() }
-            });
-        }
-        return existing;
+        if (!status) return existing;
+
+        return await prisma.volunteer_applications.update({
+            where: { id },
+            data: {
+                status: status as VolunteerStatus,
+                reviewed_by: reviewedBy ?? existing.reviewed_by,
+                reviewed_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            },
+        });
     }
 
     static async deleteApplication(id: string) {

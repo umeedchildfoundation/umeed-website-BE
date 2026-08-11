@@ -1,104 +1,45 @@
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
+import { getPgPoolConfig } from '../src/shared/pg-pool.config.ts';
+import { cleanupAllSeedData, cleanupFixtures } from './seed/cleanup.ts';
+import { seedFixtures, upsertCoreUsers } from './seed/fixtures.ts';
 
 dotenv.config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || '',
-  // ssl: { rejectUnauthorized: false },
-});
-
+const pool = new Pool(getPgPoolConfig(process.env.DATABASE_URL || ''));
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
-}
+async function main() {
+  const fullReset = process.env.SEED_RESET === 'true';
 
-const SEED_USERS = [
-  {
-    email: 'preet@umeed.org',
-    password: 'admin2026',
-    fullName: 'Preet (Super Admin)',
-    role: 'super_admin' as const,
-    volunteerStatus: 'approved' as const,
-    volunteerId: 'UMV1001',
-  },
-  {
-    email: 'admin@umeed.org',
-    password: 'admin2026',
-    fullName: 'Admin User',
-    role: 'admin' as const,
-    volunteerStatus: 'approved' as const,
-    volunteerId: 'UMV1002',
-  },
-  {
-    email: 'volunteer@umeed.org',
-    password: 'volunteer2026',
-    fullName: 'Demo Volunteer',
-    role: 'volunteer' as const,
-    volunteerStatus: 'approved' as const,
-    volunteerId: 'UMV1003',
-  },
-];
-
-async function seed() {
-  console.log('Seeding users...');
-
-  for (const u of SEED_USERS) {
-    const existing = await prisma.users.findFirst({
-      where: { email: { equals: u.email, mode: 'insensitive' } },
-    });
-
-    if (existing) {
-      console.log(`  [skip] ${u.email} already exists`);
-      continue;
-    }
-
-    const passwordHash = await hashPassword(u.password);
-    const userId = uuidv4();
-
-    await prisma.users.create({
-      data: {
-        id: userId,
-        email: u.email.toLowerCase(),
-        password_hash: passwordHash,
-        full_name: u.fullName,
-        role: u.role,
-        profile: {
-          create: {
-            id: uuidv4(),
-            email: u.email.toLowerCase(),
-            full_name: u.fullName,
-            role: u.role,
-          },
-        },
-      },
-    });
-
-    await prisma.volunteers.create({
-      data: {
-        id: uuidv4(),
-        user_id: userId,
-        volunteer_id: u.volunteerId,
-        name: u.fullName,
-        email: u.email.toLowerCase(),
-        status: u.volunteerStatus,
-        joined_at: new Date().toISOString(),
-      },
-    });
-
-    console.log(`  [created] ${u.email} (${u.role})`);
+  console.log('🌱 UMEED seed starting...');
+  if (fullReset) {
+    console.log('  SEED_RESET=true → removing all seed users + fixtures');
+    await cleanupAllSeedData(prisma);
+  } else {
+    console.log('  Cleaning fixture data only (fixed IDs — no DB bloat)');
+    await cleanupFixtures(prisma);
   }
 
-  console.log('Done.');
+  console.log('  Upserting core accounts...');
+  const ctx = await upsertCoreUsers(prisma);
+
+  console.log('  Seeding test fixtures...');
+  await seedFixtures(prisma, ctx);
+
+  console.log('\n✅ Seed complete. Re-running seed is safe — fixture rows are replaced, not duplicated.');
+  console.log('\nDemo logins:');
+  console.log('  preet@umeed.org / admin2026 (super_admin)');
+  console.log('  admin@umeed.org / admin2026 (admin)');
+  console.log('  volunteer@umeed.org / volunteer2026 (volunteer)');
+  console.log('\nTest approval flow: approve application for applicant.pending@seed.umeed.local');
+  console.log('  (Email is sent by the frontend via Apps Script after approval)');
 }
 
-seed()
+main()
   .catch((e) => {
     console.error(e);
     process.exit(1);

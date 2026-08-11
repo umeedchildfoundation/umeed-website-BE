@@ -3,16 +3,9 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import chalk from 'chalk';
 import ENV_CONFIG from '../EnvConfig.js';
+import { getPgPoolConfig } from '../shared/pg-pool.config.js';
 
-const pool = new Pool({
-  connectionString: ENV_CONFIG.CONN_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-  max: 50,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 20000,
-});
+const pool = new Pool(getPgPoolConfig(ENV_CONFIG.CONN_URL));
 
 const adapter = new PrismaPg(pool);
 
