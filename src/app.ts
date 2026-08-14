@@ -33,15 +33,29 @@ import contentRoutes from './features/content/content.routes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',').map((o) => o.trim());
+
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin) {
+      return callback(null, false);
+    }
+    if (allowedOrigins?.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
 const app = express();
 
 // ==================== MIDDLEWARE ====================
 
 // CORS - Allow frontend to make requests
-app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:8080',
-    credentials: true
-}));
+app.use(cors(corsOptions));
 
 // Parse JSON bodies
 app.use(express.json());
