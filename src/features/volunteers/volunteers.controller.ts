@@ -2,6 +2,9 @@ import chalk from 'chalk';
 import { Request, Response } from 'express';
 import { VolunteersService } from './volunteers.service.js';
 
+// Fields a non-admin owner is not allowed to change on their own volunteer record
+const ADMIN_ONLY_FIELDS = ['email', 'gender', 'status', 'volunteer_id', 'volunteerId'];
+
 const REQUIRED_FIELD_ERRORS = new Set([
     'Name and email are required',
     'Phone is required',
@@ -53,7 +56,24 @@ export class VolunteersController {
 
     static async updateVolunteer(req: Request, res: Response) {
         try {
-            const updated = await VolunteersService.updateVolunteer(req.params.id, req.body);
+            const volunteer = await VolunteersService.getVolunteerById(req.params.id);
+            if (!volunteer) return res.status(404).json({ error: 'Volunteer not found' });
+
+            const isAdmin = req.user!.role === 'admin' || req.user!.role === 'super_admin';
+            const isOwner = volunteer.user_id === req.user!.id;
+
+            if (!isAdmin && !isOwner) {
+                return res.status(403).json({ error: 'Admin access required' });
+            }
+
+            // Non-admin owners may update their own profile, except admin-controlled fields
+            let payload = req.body;
+            if (!isAdmin) {
+                payload = { ...req.body };
+                for (const field of ADMIN_ONLY_FIELDS) delete payload[field];
+            }
+
+            const updated = await VolunteersService.updateVolunteer(req.params.id, payload);
             res.json(updated);
         } catch (error: any) {
             console.error(chalk.red('[Volunteers] Update error:'),  error);
